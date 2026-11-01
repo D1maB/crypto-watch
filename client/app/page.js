@@ -118,20 +118,6 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
           </ul>
         </section>
       )}
-      {top24hMovers.length > 0 && (
-        <section style={{ marginBottom: '1.5rem' }}>
-          <h2 style={{ marginBottom: '0.5rem' }}>24h Top Movers (over 1%)</h2>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            {top24hMovers.map((item) => (
-              <li key={itemKey(item)} style={{ padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
-                <strong>{String(item.symbol).toUpperCase()}</strong> ({item.exchange})<br />
-                ${formatNumber(item.price)} — {Number(item.changePercent) >= 0 ? '+' : ''}
-                {formatNumber(item.changePercent)}%
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
       {entries.length === 0 ? (
         <p>Waiting for prices…</p>
       ) : (
