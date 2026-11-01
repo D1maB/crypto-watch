@@ -27,7 +27,7 @@ export default function Home() {
   const [status, setStatus] = useState('connecting');
   const [showComparison, setShowComparison] = useState(false);
   const [watchSymbol, setWatchSymbol] = useState('');
-  const [watchMinutes, setWatchMinutes] = useState(20);
+  const [watchMinutes] = useState(20);
   const [watching, setWatching] = useState(false);
   const [watchStartPrice, setWatchStartPrice] = useState(null);
   const [watchStartAt, setWatchStartAt] = useState(null);
@@ -183,6 +183,20 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
     } catch (e) {}
   };
 
+  useEffect(() => {
+    if (watching) return;
+    const mover = entries.find((item) => Math.abs(Number(item.changePercent)) >= 1);
+    if (!mover) return;
+    const symbol = String(mover.symbol).replace('-', '').toUpperCase();
+    watchingRef.current = true;
+    watchSymbolRef.current = symbol;
+    setWatchSymbol(symbol);
+    setWatchStartPrice(null);
+    setWatchStartAt(Date.now());
+    setWatchHistory([]);
+    setWatching(true);
+  }, [entries, watching]);
+
   return (
     <main style={{ padding: '1rem', fontFamily: 'sans-serif', fontSize: '0.9rem' }}>
       <h1 style={{ marginTop: 0 }}>Crypto Watch</h1>
@@ -190,25 +204,12 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
       <section style={{ marginBottom: '1.5rem', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
         <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Watch Ticker</h2>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.75rem' }}>
-          <select value={watchSymbol} onChange={(e) => setWatchSymbol(e.target.value)} style={{ padding: '0.35rem' }}>
-            <option value="">Select ticker</option>
-            {symbolList.map((symbol) => (
-              <option key={symbol} value={symbol}>
-                {symbol}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            min="1"
-            value={watchMinutes}
-            onChange={(e) => setWatchMinutes(Math.max(1, Number(e.target.value) || 1))}
-            style={{ width: '5rem', padding: '0.35rem' }}
-          />
-          <span>minutes</span>
-          <button onClick={watching ? stopWatch : startWatch} style={{ padding: '0.35rem 0.65rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff', cursor: 'pointer' }}>
-            {watching ? 'Stop' : 'Start'}
-          </button>
+          <span>Auto (20 min) when a ticker moves over 1%: {watchSymbol || 'waiting...'}</span>
+          {watching && (
+            <button onClick={stopWatch} style={{ padding: '0.35rem 0.65rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff', cursor: 'pointer' }}>
+              Stop
+            </button>
+          )}
           {watching && (
             <span style={{ fontWeight: 'bold' }}>
               Time left: {Math.floor(watchRemaining / 60)}:{String(watchRemaining % 60).padStart(2, '0')}
