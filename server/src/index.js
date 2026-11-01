@@ -3,17 +3,17 @@ import express from 'express';
 import cors from 'cors';
 import { WebSocketServer } from 'ws';
 import { PORT, CLIENT_ORIGIN } from './config/env.js';
-import { BinancePriceStream } from './services/binanceService.js';
-import { OkxPriceStream } from './services/okxService.js';
-import { BybitPriceStream } from './services/bybitService.js';
+import { createBinanceStream } from './services/binance.js';
+import { createOkxStream } from './services/okx.js';
+import { createBybitStream } from './services/bybit.js';
 
 const app = express();
 app.use(cors({ origin: CLIENT_ORIGIN }));
 app.use(express.json());
 
-const binance = new BinancePriceStream();
-const okx = new OkxPriceStream();
-const bybit = new BybitPriceStream();
+const binance = createBinanceStream();
+const okx = createOkxStream();
+const bybit = createBybitStream();
 binance.start();
 okx.start();
 bybit.start();

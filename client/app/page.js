@@ -13,7 +13,7 @@ function formatNumber(value, digits = 2) {
 }
 
 function itemKey(item) {
-  return `${item.exchange}:${item.instId ?? item.symbol}`;
+  return item.key ?? `${item.exchange}:${item.instId ?? item.symbol}`;
 }
 
 export default function Home() {
