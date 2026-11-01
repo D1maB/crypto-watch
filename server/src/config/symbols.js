@@ -6,6 +6,11 @@ export const BASE_SYMBOLS = [
   'G', 'ADA', 'ZRO', 'FET', 'LTC', 'ARB', 'XLM', 'INJ', 'ZAMA', 'ONDO',
   'STX', 'BCH', 'PUMP', 'MORPHO', 'GRAM', 'HBAR', 'ASTER', 'STRK', 'FIL', 'TIA',
   'EIGEN', 'APT', 'PENGU', 'ATOM', 'ICP', 'NIGHT', 'PENDLE', 'SEI', 'DOT', 'WLFI',
+  'CRV', 'OP', 'POL', 'PYTH', 'VIRTUAL', 'LDO', 'ETC', 'PARTI', 'PROVE', 'RENDER',
+  'BAT', 'SHIB', 'ZEN', 'HUMA', 'SKY', 'ETHFI', 'SENT', 'SAND', 'JUP', 'AR',
+  'MEGA', 'JTO', 'BONK', 'SPK', 'FOGO', '1INCH', 'S', 'AGLD', 'FLOKI', 'KMNO',
+  'ZK', 'ALGO', '2Z', 'GALA', 'XTZ', 'CHZ', 'ARKM', 'COMP', 'W', 'BOME',
+  'ENS', 'APE', 'SNX', 'ROBO', 'WIF', 'MINA', 'BREV', 'DYDX', 'WOO', 'AXS',
 ];
 
 export const toBinanceSymbol = (base) => `${base}USDT`.toLowerCase();
