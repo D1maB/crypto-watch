@@ -52,12 +52,6 @@ export default function Home() {
   }, []);
 
   const entries = Object.values(prices);
-  const grouped = entries.reduce((acc, item) => {
-    const key = item.exchange ?? 'unknown';
-    (acc[key] ??= []).push(item);
-    return acc;
-  }, {});
-
   // Group by normalized symbol for comparison
   const symbolGroups = entries.reduce((acc, item) => {
     const normalized = String(item.symbol).replace('-', '').toUpperCase();
@@ -66,15 +60,6 @@ export default function Home() {
   }, {});
 
   const symbolList = Object.keys(symbolGroups).sort();
-
-  const exchanges = Object.keys(grouped).sort((a, b) => {
-    const ai = EXCHANGE_ORDER.indexOf(a);
-    const bi = EXCHANGE_ORDER.indexOf(b);
-    if (ai === -1 && bi === -1) return a.localeCompare(b);
-    if (ai === -1) return 1;
-    if (bi === -1) return -1;
-    return ai - bi;
-  });
 
   return (
     <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
@@ -145,56 +130,6 @@ export default function Home() {
             </div>
           </section>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: `repeat(${exchanges.length}, minmax(240px, 1fr))`,
-              gap: '1.5rem',
-              alignItems: 'start',
-            }}
-          >
-            {exchanges.map((exchange) => (
-              <section
-                key={exchange}
-                style={{
-                  border: '1px solid #ddd',
-                  borderRadius: '12px',
-                  padding: '1rem',
-                  background: '#fafafa',
-                }}
-              >
-                <h2 style={{ textTransform: 'capitalize', marginTop: 0 }}>
-                  {exchange}
-                </h2>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {grouped[exchange]
-                    .sort((a, b) => String(a.symbol).localeCompare(String(b.symbol)))
-                    .map((item) => {
-                      const positive = item.changePercent >= 0;
-                      return (
-                        <li
-                          key={itemKey(item)}
-                          style={{
-                            padding: '0.75rem',
-                            marginBottom: '0.5rem',
-                            border: '1px solid #e5e5e5',
-                            borderRadius: '8px',
-                            background: '#fff',
-                          }}
-                        >
-                          <strong>{String(item.symbol).toUpperCase()}</strong>
-                          <div>Price: ${formatNumber(item.price)}</div>
-                          <div style={{ color: positive ? 'green' : 'red' }}>
-                            24h: {positive ? '+' : ''}
-                            {formatNumber(item.changePercent)}%
-                          </div>
-                        </li>
-                      );
-                    })}
-                </ul>
-              </section>
-            ))}
-          </div>
         </>
       )}
     </main>
