@@ -26,16 +26,15 @@ export default function Home() {
   const [prices, setPrices] = useState({});
   const [status, setStatus] = useState('connecting');
   const [showComparison, setShowComparison] = useState(false);
-  const [watchSymbol, setWatchSymbol] = useState('');
+  const [watchSymbols, setWatchSymbols] = useState([]);
   const [watchMinutes] = useState(20);
   const [watching, setWatching] = useState(false);
-  const [watchStartPrice, setWatchStartPrice] = useState(null);
   const [watchStartAt, setWatchStartAt] = useState(null);
-  const [watchHistory, setWatchHistory] = useState([]);
+  const [watchSampleCount, setWatchSampleCount] = useState(0);
   const [watchRemaining, setWatchRemaining] = useState(0);
   const prevPricesRef = useRef(new Map());
   const watchingRef = useRef(false);
-  const watchSymbolRef = useRef('');
+  const watchSymbolsRef = useRef(new Set());
   const watchIntervalRef = useRef(null);
 
   useEffect(() => {
@@ -68,11 +67,10 @@ export default function Home() {
           setPrices((prev) => ({ ...prev, [key]: { ...msg.data, rtChangePercent } }));
 
           const normalizedSymbol = String(msg.data.symbol ?? '').replace('-', '').toUpperCase();
-          if (watchingRef.current && normalizedSymbol === watchSymbolRef.current) {
+          if (watchingRef.current && watchSymbolsRef.current.has(normalizedSymbol)) {
             const samplePrice = Number(msg.data.price);
             if (Number.isFinite(samplePrice)) {
-              setWatchStartPrice((prev) => (prev == null ? samplePrice : prev));
-              setWatchHistory((prev) => [...prev, { t: Date.now(), price: samplePrice }]);
+              setWatchSampleCount((prev) => prev + 1);
             }
           }
         }
@@ -148,6 +146,8 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
       if (remainingMs <= 0) {
         setWatching(false);
         watchingRef.current = false;
+        watchSymbolsRef.current = new Set();
+        setWatchSymbols([]);
         if (watchIntervalRef.current) clearInterval(watchIntervalRef.current);
         watchIntervalRef.current = null;
       }
@@ -171,20 +171,27 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
   const stopWatch = () => {
     watchingRef.current = false;
     setWatching(false);
+    watchSymbolsRef.current = new Set();
+    setWatchSymbols([]);
   };
 
   useEffect(() => {
-    if (watching) return;
-    const mover = entries.find((item) => Math.abs(Number(item.changePercent)) >= 1);
-    if (!mover) return;
-    const symbol = String(mover.symbol).replace('-', '').toUpperCase();
-    watchingRef.current = true;
-    watchSymbolRef.current = symbol;
-    setWatchSymbol(symbol);
-    setWatchStartPrice(null);
-    setWatchStartAt(Date.now());
-    setWatchHistory([]);
-    setWatching(true);
+    const qualifying = [...new Set(entries
+      .filter((item) => Math.abs(Number(item.changePercent)) >= 1)
+      .map((item) => String(item.symbol).replace('-', '').toUpperCase()))];
+    const newSymbols = qualifying.filter((symbol) => !watchSymbolsRef.current.has(symbol));
+
+    if (newSymbols.length > 0) {
+      newSymbols.forEach((symbol) => watchSymbolsRef.current.add(symbol));
+      setWatchSymbols([...watchSymbolsRef.current]);
+    }
+
+    if (!watching && watchSymbolsRef.current.size > 0) {
+      watchingRef.current = true;
+      setWatchStartAt(Date.now());
+      setWatchSampleCount(0);
+      setWatching(true);
+    }
   }, [entries, watching]);
 
   return (
@@ -194,7 +201,7 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
       <section style={{ marginBottom: '1.5rem', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
         <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Watch Ticker</h2>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.75rem' }}>
-          <span>Auto (20 min) when a ticker moves over 1%: {watchSymbol || 'waiting...'}</span>
+          <span>Auto (20 min) when a ticker moves over 1%: {watchSymbols.length ? watchSymbols.join(', ') : 'waiting...'}</span>
           {watching && (
             <button onClick={stopWatch} style={{ padding: '0.35rem 0.65rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff', cursor: 'pointer' }}>
               Stop
@@ -205,18 +212,7 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
               Time left: {Math.floor(watchRemaining / 60)}:{String(watchRemaining % 60).padStart(2, '0')}
             </span>
           )}
-          {watchStartPrice != null && watchHistory.length > 0 && (
-            <span style={{ color: Math.abs(((watchHistory[watchHistory.length - 1].price - watchStartPrice) / watchStartPrice) * 100) > 1 ? '#dc2626' : '#16a34a', fontWeight: 'bold' }}>
-              {((watchHistory[watchHistory.length - 1].price - watchStartPrice) / watchStartPrice) * 100 >= 0 ? '+' : ''}
-              {(((watchHistory[watchHistory.length - 1].price - watchStartPrice) / watchStartPrice) * 100).toFixed(2)}%
-            </span>
-          )}
-        </div>
-        {watchHistory.length > 0 && (
-          <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.35rem' }}>
-            Watching {watchSymbol} ({watchHistory.length} samples)
-          </div>
-        )}
+          <span style={{ fontWeight: 'bold' }}>{watchSampleCount} samples</span>
       </section>
       {crossMovers.length > 0 && (
         <section style={{ marginBottom: '1.5rem' }}>
