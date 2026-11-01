@@ -222,7 +222,6 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
                     borderRadius: '12px',
                     background: 'linear-gradient(135deg, #eff6ff, #f0fdf4)',
                     boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
-                    textAlign: 'center',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
