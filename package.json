@@ -1,0 +1,13 @@
+{
+  "name": "crypto-watch",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Crypto price tracker: Node.js API + Next.js client",
+  "scripts": {
+    "dev": "docker-compose up",
+    "dev:build": "docker-compose up --build"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
