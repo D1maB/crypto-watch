@@ -45,14 +45,19 @@ export class PriceStream {
     }
   }
 
-  connect() {
+  async connect() {
     if (this.stopped) return;
 
-    const ws = new WebSocket(this.url);
+    let url = this.url;
+    if (typeof url === 'function') {
+      url = await url();
+    }
+
+    const ws = new WebSocket(url);
     this.ws = ws;
 
     ws.on('open', () => {
-      console.log(`[${this.name}] connected: ${this.url}`);
+      console.log(`[${this.name}] connected: ${ws.url}`);
       this.subscribe(ws);
     });
 
