@@ -65,13 +65,22 @@ export default function Home() {
   }, []);
 
   const entries = Object.values(prices);
-  const top24hMovers = entries
-    .filter((item) => Math.abs(Number(item.changePercent)) >= 1)
-    .sort((a, b) => Math.abs(Number(b.changePercent)) - Math.abs(Number(a.changePercent)))
-    .slice(0, 2);
-  const realtimeMovers = entries
-    .filter((item) => Number.isFinite(item.rtChangePercent))
-    .sort((a, b) => Math.abs(Number(b.rtChangePercent)) - Math.abs(Number(a.rtChangePercent)))
+  const crossMovers = Object.entries(symbolGroups).flatMap(([symbol, items]) => {
+    const prices = items
+      .map((item) => ({ ex: item.exchange, price: Number(item.price) }))
+      .filter((item) => Number.isFinite(item.price));
+    const pairs = [];
+    for (let i = 0; i < prices.length; i += 1) {
+      for (let j = i + 1; j < prices.length; j += 1) {
+        const a = prices[i];
+        const b = prices[j];
+        const diff = ((b.price - a.price) / a.price) * 100;
+        pairs.push({ symbol, exA: a.ex, priceA: a.price, exB: b.ex, priceB: b.price, diff });
+      }
+    }
+    return pairs;
+  })
+    .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
     .slice(0, 2);
   // Group by normalized symbol for comparison
   const symbolGroups = entries.reduce((acc, item) => {
@@ -104,15 +113,14 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
     <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
       <h1 style={{ marginTop: 0 }}>Crypto Watch</h1>
       <p>Status: {status}</p>
-      {realtimeMovers.length > 0 && (
+      {crossMovers.length > 0 && (
         <section style={{ marginBottom: '1.5rem' }}>
           <h2 style={{ marginBottom: '0.5rem' }}>Realtime Top Movers</h2>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            {realtimeMovers.map((item) => (
-              <li key={itemKey(item)} style={{ padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
-                <strong>{String(item.symbol).toUpperCase()}</strong> ({item.exchange})<br />
-                ${formatNumber(item.price)} — {Number(item.rtChangePercent) >= 0 ? '+' : ''}
-                {formatNumber(item.rtChangePercent)}%
+            {crossMovers.map((item, idx) => (
+              <li key={`${item.symbol}-${item.exA}-${item.exB}-${idx}`} style={{ padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
+                <strong>{String(item.symbol).toUpperCase()}</strong> - {item.exA}(${formatNumber(item.priceA)}) -&gt; {item.exB}(${formatNumber(item.priceB)}) - diff({Number(item.diff) >= 0 ? '+' : ''}
+                {item.diff.toFixed(2)}%)
               </li>
             ))}
           </ul>
