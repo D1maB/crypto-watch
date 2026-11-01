@@ -11,3 +11,5 @@ export const BASE_SYMBOLS = [
 export const toBinanceSymbol = (base) => `${base}USDT`.toLowerCase();
 export const toBybitSymbol = (base) => `${base}USDT`;
 export const toOkxInstId = (base) => `${base}-USDT`;
+export const toBitfinexSymbol = (base) => `t${base}USD`;
+export const toMexcSymbol = (base) => `${base}USDT`;

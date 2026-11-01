@@ -16,8 +16,8 @@ function itemKey(item) {
   return item.key ?? `${item.exchange}:${item.instId ?? item.symbol}`;
 }
 
-const EXCHANGE_ORDER = ['binance', 'okx', 'bybit', 'bitget', 'kucoin'];
-const EXCHANGE_LABELS = { binance: 'B', okx: 'O', bybit: 'By', bitget: 'Bit', kucoin: 'Ku' };
+const EXCHANGE_ORDER = ['binance', 'okx', 'bybit', 'bitget', 'kucoin', 'mexc', 'bitfinex'];
+const EXCHANGE_LABELS = { binance: 'B', okx: 'O', bybit: 'By', bitget: 'Bit', kucoin: 'Ku', mexc: 'Mx', bitfinex: 'Bfx' };
 const EXCHANGE_PAIRS = EXCHANGE_ORDER.flatMap((a, i) =>
   EXCHANGE_ORDER.slice(i + 1).map((b) => [a, b])
 );
