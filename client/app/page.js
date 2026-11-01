@@ -116,18 +116,21 @@ export default function Home() {
     setWatchedMovers((prev) => {
       const keyOf = (item) => `${item.symbol}-${item.exA}-${item.exB}`;
       const freshByKey = new Map(qualifying.map((item) => [keyOf(item), item]));
-      const updated = prev.map((item) => {
-        const fresh = freshByKey.get(keyOf(item)) ?? item;
-        const currentDiff = Number.isFinite(fresh.diff) ? fresh.diff : item.diff;
-        const previousMax = Number.isFinite(item.maxDiff) ? item.maxDiff : (Number.isFinite(item.firstDiff) ? item.firstDiff : currentDiff);
-        const nextMax = Math.abs(currentDiff) > Math.abs(previousMax) ? currentDiff : previousMax;
-        return {
-          ...fresh,
-          addedAt: item.addedAt ?? Date.now(),
-          firstDiff: item.firstDiff ?? fresh.diff,
-          maxDiff: nextMax,
-        };
-      });
+      const updated = prev
+        .map((item) => {
+          const fresh = freshByKey.get(keyOf(item)) ?? item;
+          const currentDiff = Number.isFinite(fresh.diff) ? fresh.diff : item.diff;
+          if (!Number.isFinite(currentDiff) || Math.abs(currentDiff) >= 20) return null;
+          const previousMax = Number.isFinite(item.maxDiff) ? item.maxDiff : (Number.isFinite(item.firstDiff) ? item.firstDiff : currentDiff);
+          const nextMax = Math.abs(currentDiff) > Math.abs(previousMax) ? currentDiff : previousMax;
+          return {
+            ...fresh,
+            addedAt: item.addedAt ?? Date.now(),
+            firstDiff: item.firstDiff ?? fresh.diff,
+            maxDiff: nextMax,
+          };
+        })
+        .filter(Boolean);
       const existing = new Set(updated.map(keyOf));
       const additions = qualifying
         .filter((item) => !existing.has(keyOf(item)))
@@ -421,7 +424,7 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
                     };
 
                     const calcDiff = (p1, p2) => {
-                      if (!p1 || !p2) return { text: '—', num: null };
+                      if (!p1 || !p2 || Number(p1) <= 0 || Number(p2) <= 0) return { text: '—', num: null };
                       const diff = ((p1 - p2) / p2) * 100;
                       const absDiff = Math.abs(diff);
                       return {
