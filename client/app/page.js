@@ -73,6 +73,7 @@ export default function Home() {
               setWatchHistory((prev) => [...prev, { t: Date.now(), price: samplePrice }]);
             }
           }
+        }
       } catch (err) {
         console.error('ws parse error', err);
       }
