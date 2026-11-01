@@ -26,7 +26,15 @@ export default function Home() {
   const [prices, setPrices] = useState({});
   const [status, setStatus] = useState('connecting');
   const [showComparison, setShowComparison] = useState(false);
+  const [watchSymbol, setWatchSymbol] = useState('');
+  const [watchMinutes, setWatchMinutes] = useState(20);
+  const [watching, setWatching] = useState(false);
+  const [watchStartPrice, setWatchStartPrice] = useState(null);
+  const [watchStartAt, setWatchStartAt] = useState(null);
+  const [watchHistory, setWatchHistory] = useState([]);
+  const [watchRemaining, setWatchRemaining] = useState(0);
   const prevPricesRef = useRef(new Map());
+  const watchIntervalRef = useRef(null);
 
   useEffect(() => {
     const ws = new WebSocket(WS_BASE);
@@ -56,7 +64,15 @@ export default function Home() {
               : null;
           prevPricesRef.current.set(key, price);
           setPrices((prev) => ({ ...prev, [key]: { ...msg.data, rtChangePercent } }));
-        }
+
+          const normalizedSymbol = String(msg.data.symbol ?? '').replace('-', '').toUpperCase();
+          if (watchingRef.current && normalizedSymbol === watchSymbolRef.current) {
+            const samplePrice = Number(msg.data.price);
+            if (Number.isFinite(samplePrice)) {
+              setWatchStartPrice((prev) => (prev == null ? samplePrice : prev));
+              setWatchHistory((prev) => [...prev, { t: Date.now(), price: samplePrice }]);
+            }
+          }
       } catch (err) {
         console.error('ws parse error', err);
       }
@@ -112,10 +128,118 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
   return String(a).localeCompare(String(b));
 });
 
+  useEffect(() => {
+    if (!watching) {
+      if (watchIntervalRef.current) {
+        clearInterval(watchIntervalRef.current);
+        watchIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const endAt = Date.now() + watchMinutes * 60 * 1000;
+    setWatchRemaining(watchMinutes * 60);
+    watchIntervalRef.current = setInterval(() => {
+      const remainingMs = Math.max(0, endAt - Date.now());
+      setWatchRemaining(Math.ceil(remainingMs / 1000));
+      if (remainingMs <= 0) {
+        setWatching(false);
+        watchingRef.current = false;
+        if (watchIntervalRef.current) clearInterval(watchIntervalRef.current);
+        watchIntervalRef.current = null;
+        try {
+          localStorage.setItem(
+            `watch_${watchSymbolRef.current}_${Date.now()}`,
+            JSON.stringify({ symbol: watchSymbolRef.current, history: watchHistory }, null, 0)
+          );
+        } catch (e) {}
+      }
+    }, 1000);
+
+    return () => {
+      if (watchIntervalRef.current) clearInterval(watchIntervalRef.current);
+    };
+  }, [watching, watchMinutes]);
+
+  const startWatch = () => {
+    if (!watchSymbol) return;
+    watchingRef.current = true;
+    watchSymbolRef.current = watchSymbol;
+    setWatching(true);
+    setWatchStartPrice(null);
+    setWatchStartAt(Date.now());
+    setWatchHistory([]);
+  };
+
+  const stopWatch = () => {
+    watchingRef.current = false;
+    setWatching(false);
+    try {
+      localStorage.setItem(
+        `watch_${watchSymbolRef.current}_${Date.now()}`,
+        JSON.stringify({ symbol: watchSymbolRef.current, history: watchHistory }, null, 0)
+      );
+    } catch (e) {}
+  };
+
   return (
     <main style={{ padding: '1rem', fontFamily: 'sans-serif', fontSize: '0.9rem' }}>
       <h1 style={{ marginTop: 0 }}>Crypto Watch</h1>
       <p>Status: {status}</p>
+      <section style={{ marginBottom: '1.5rem', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
+        <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Watch Ticker</h2>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.75rem' }}>
+          <select value={watchSymbol} onChange={(e) => setWatchSymbol(e.target.value)} style={{ padding: '0.35rem' }}>
+            <option value="">Select ticker</option>
+            {symbolList.map((symbol) => (
+              <option key={symbol} value={symbol}>
+                {symbol}
+              </option>
+            ))}
+          </select>
+          <input
+            type="number"
+            min="1"
+            value={watchMinutes}
+            onChange={(e) => setWatchMinutes(Math.max(1, Number(e.target.value) || 1))}
+            style={{ width: '5rem', padding: '0.35rem' }}
+          />
+          <span>minutes</span>
+          <button onClick={watching ? stopWatch : startWatch} style={{ padding: '0.35rem 0.65rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff', cursor: 'pointer' }}>
+            {watching ? 'Stop' : 'Start'}
+          </button>
+          {watching && (
+            <span style={{ fontWeight: 'bold' }}>
+              Time left: {Math.floor(watchRemaining / 60)}:{String(watchRemaining % 60).padStart(2, '0')}
+            </span>
+          )}
+          {watchStartPrice != null && watchHistory.length > 0 && (
+            <span style={{ color: Math.abs(((watchHistory[watchHistory.length - 1].price - watchStartPrice) / watchStartPrice) * 100) > 1 ? '#dc2626' : '#16a34a', fontWeight: 'bold' }}>
+              {((watchHistory[watchHistory.length - 1].price - watchStartPrice) / watchStartPrice) * 100 >= 0 ? '+' : ''}
+              {(((watchHistory[watchHistory.length - 1].price - watchStartPrice) / watchStartPrice) * 100).toFixed(2)}%
+            </span>
+          )}
+        </div>
+        {watchHistory.length >= 2 && (
+          <div>
+            <svg width="360" height="140" style={{ border: '1px solid #eee', borderRadius: '8px', background: '#fafafa' }}>
+              {(() => {
+                const vals = watchHistory.map((p) => p.price);
+                const min = Math.min(...vals);
+                const max = Math.max(...vals);
+                const pad = 10;
+                const w = 360;
+                const h = 140;
+                const points = watchHistory
+                  .map((p, i) => `${pad + (i / (watchHistory.length - 1)) * (w - pad * 2)},${h - pad - ((p.price - min) / (max - min || 1)) * (h - pad * 2)}`)
+                  .join(' ');
+                return <polyline points={points} fill="none" stroke="#2563eb" strokeWidth="2" />;
+              })()}
+            </svg>
+            <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.35rem' }}>Saved {watchHistory.length} samples to browser storage on stop.</div>
+          </div>
+        )}
+      </section>
       {crossMovers.length > 0 && (
         <section style={{ marginBottom: '1.5rem' }}>
           <h2 style={{ marginBottom: '0.5rem' }}>Realtime Top Movers</h2>
