@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 
-const DEFAULT_SYMBOLS = ['btcusdt', 'ethusdt'];
+const DEFAULT_SYMBOLS = ['btcusdt', 'ethusdt', 'solusdt', 'xrpusdt'];
 const RECONNECT_DELAY_MS = 3000;
 
 /**

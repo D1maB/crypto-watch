@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 
-const DEFAULT_INST_IDS = ['BTC-USDT', 'ETH-USDT'];
+const DEFAULT_INST_IDS = ['BTC-USDT', 'ETH-USDT', 'SOL-USDT', 'XRP-USDT'];
 const RECONNECT_DELAY_MS = 3000;
 
 export class OkxPriceStream {

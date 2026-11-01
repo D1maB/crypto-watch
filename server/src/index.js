@@ -5,6 +5,7 @@ import { WebSocketServer } from 'ws';
 import { PORT, CLIENT_ORIGIN } from './config/env.js';
 import { BinancePriceStream } from './services/binanceService.js';
 import { OkxPriceStream } from './services/okxService.js';
+import { BybitPriceStream } from './services/bybitService.js';
 
 const app = express();
 app.use(cors({ origin: CLIENT_ORIGIN }));
@@ -12,15 +13,17 @@ app.use(express.json());
 
 const binance = new BinancePriceStream();
 const okx = new OkxPriceStream();
+const bybit = new BybitPriceStream();
 binance.start();
 okx.start();
+bybit.start();
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
 app.get('/api/prices', (_req, res) => {
-  res.json([...binance.snapshot(), ...okx.snapshot()]);
+  res.json([...binance.snapshot(), ...okx.snapshot(), ...bybit.snapshot()]);
 });
 
 const server = http.createServer(app);
@@ -37,11 +40,12 @@ function broadcast(payload) {
 }
 
 wss.on('connection', (socket) => {
-  socket.send(JSON.stringify({ type: 'snapshot', data: [...binance.snapshot(), ...okx.snapshot()] }));
+  socket.send(JSON.stringify({ type: 'snapshot', data: [...binance.snapshot(), ...okx.snapshot(), ...bybit.snapshot()] }));
 });
 
 binance.onUpdate((update) => broadcast({ type: 'update', data: update }));
 okx.onUpdate((update) => broadcast({ type: 'update', data: update }));
+bybit.onUpdate((update) => broadcast({ type: 'update', data: update }));
 
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
@@ -50,5 +54,6 @@ server.listen(PORT, () => {
 process.on('SIGTERM', () => {
   binance.stop();
   okx.stop();
+  bybit.stop();
   server.close(() => process.exit(0));
 });
