@@ -199,19 +199,53 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
       <p>Status: {status}</p>
       <section style={{ marginBottom: '1.5rem' }}>
         <h2 style={{ marginBottom: '0.5rem' }}>Watch Ticker</h2>
-        {watchSymbols.length === 0 ? (
-          <p style={{ margin: 0 }}>Waiting for a ticker with over 1% movement...</p>
+        {crossMovers.length === 0 ? (
+          <p style={{ margin: 0 }}>Waiting for realtime exchange differences...</p>
         ) : (
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(240px, 1fr))', gap: '1rem' }}>
-            {watchSymbols.map((symbol, idx) => {
-              const items = symbolGroups[symbol] ?? [];
-              const available = EXCHANGE_ORDER.filter((ex) => items.some((item) => item.exchange === ex));
-              const first = available[0];
-              const second = available[1] ?? available[0];
-              const priceA = items.find((item) => item.exchange === first)?.price;
-              const priceB = items.find((item) => item.exchange === second)?.price;
-              const diff = priceA && priceB ? ((Number(priceB) - Number(priceA)) / Number(priceA)) * 100 : null;
-              return (
+            {crossMovers.map((item, idx) => (
+              <li
+                key={`${item.symbol}-${item.exA}-${item.exB}-${idx}`}
+                style={{
+                  flex: '1 1 280px',
+                  padding: '1rem',
+                  border: '1px solid #dbeafe',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #eff6ff, #f0fdf4)',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <strong style={{ fontSize: '1rem' }}>{item.symbol}</strong>
+                  {watching && (
+                    <span style={{ padding: '0.25rem 0.5rem', borderRadius: '999px', background: '#2563eb', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                      {Math.floor(watchRemaining / 60)}:{String(watchRemaining % 60).padStart(2, '0')}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                  <div style={{ textAlign: 'left', flex: 1 }}>
+                    <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{item.exA}</div>
+                    <div style={{ fontWeight: 'bold' }}>${formatNumber(item.priceA)}</div>
+                  </div>
+                  <div style={{ fontSize: '1.2rem', color: '#666' }}>&rarr;</div>
+                  <div style={{ textAlign: 'left', flex: 1 }}>
+                    <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{item.exB}</div>
+                    <div style={{ fontWeight: 'bold' }}>${formatNumber(item.priceB)}</div>
+                  </div>
+                  <div style={{ textAlign: 'left', flex: 1 }}>
+                    <div style={{ fontSize: '0.75rem', color: '#555' }}>diff</div>
+                    <div style={{ fontWeight: 'bold', color: item.diff >= 0 ? '#16a34a' : '#dc2626' }}>
+                      {item.diff >= 0 ? '+' : ''}
+                      {item.diff.toFixed(2)}%
+                    </div>
+                  </div>
+                </div>
+                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#666' }}>{watchSampleCount} samples recorded</div>
+              </li>
+            ))}
+          </ul>
+        )}
                 <li
                   key={`${symbol}-${idx}`}
                   style={{
