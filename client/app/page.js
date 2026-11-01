@@ -177,8 +177,7 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
 
   useEffect(() => {
     const qualifying = [...new Set(crossMovers
-      .filter((item) => Math.abs(Number(item.diff)) >= 2)
-      .map((item) => String(item.symbol).replace('-', '').toUpperCase()))].slice(0, 5);
+      .map((item) => String(item.symbol).replace('-', '').toUpperCase()))].slice(0, 2);
     const newSymbols = qualifying.filter((symbol) => !watchSymbolsRef.current.has(symbol));
 
     if (newSymbols.length > 0) {
