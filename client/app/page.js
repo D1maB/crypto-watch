@@ -65,6 +65,14 @@ export default function Home() {
   }, []);
 
   const entries = Object.values(prices);
+
+  // Group by normalized symbol for comparison
+  const symbolGroups = entries.reduce((acc, item) => {
+    const normalized = String(item.symbol).replace('-', '').toUpperCase();
+    (acc[normalized] ??= []).push(item);
+    return acc;
+  }, {});
+
   const crossMovers = Object.entries(symbolGroups).flatMap(([symbol, items]) => {
     const prices = items
       .map((item) => ({ ex: item.exchange, price: Number(item.price) }))
@@ -82,12 +90,6 @@ export default function Home() {
   })
     .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
     .slice(0, 2);
-  // Group by normalized symbol for comparison
-  const symbolGroups = entries.reduce((acc, item) => {
-    const normalized = String(item.symbol).replace('-', '').toUpperCase();
-    (acc[normalized] ??= []).push(item);
-    return acc;
-  }, {});
 
   const quoteOf = (symbol) => {
   const s = String(symbol).toUpperCase();
