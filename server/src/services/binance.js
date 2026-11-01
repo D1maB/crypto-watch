@@ -1,7 +1,7 @@
 import { PriceStream } from './priceStream.js';
-import { BASE_SYMBOLS, toBinanceSymbol } from '../config/symbols.js';
+import { BASE_SYMBOLS, toBinanceSymbol, CROSS_PAIRS, formatCrossPair } from '../config/symbols.js';
 
-const DEFAULT_SYMBOLS = BASE_SYMBOLS.map(toBinanceSymbol);
+const DEFAULT_SYMBOLS = [...BASE_SYMBOLS.map(toBinanceSymbol), ...CROSS_PAIRS.map(formatCrossPair.binance)];
 
 export function createBinanceStream(symbols = DEFAULT_SYMBOLS) {
   const normalized = symbols.map((s) => s.toLowerCase());

@@ -1,7 +1,7 @@
 import { PriceStream } from './priceStream.js';
-import { BASE_SYMBOLS, toOkxInstId } from '../config/symbols.js';
+import { BASE_SYMBOLS, toOkxInstId, CROSS_PAIRS, formatCrossPair } from '../config/symbols.js';
 
-const DEFAULT_INST_IDS = BASE_SYMBOLS.map(toOkxInstId);
+const DEFAULT_INST_IDS = [...BASE_SYMBOLS.map(toOkxInstId), ...CROSS_PAIRS.map(formatCrossPair.okx)];
 
 export function createOkxStream(instIds = DEFAULT_INST_IDS) {
   return new PriceStream({

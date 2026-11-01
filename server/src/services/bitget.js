@@ -1,7 +1,7 @@
 import { PriceStream } from './priceStream.js';
-import { BASE_SYMBOLS, toBybitSymbol } from '../config/symbols.js';
+import { BASE_SYMBOLS, toBybitSymbol, CROSS_PAIRS, formatCrossPair } from '../config/symbols.js';
 
-const DEFAULT_SYMBOLS = BASE_SYMBOLS.map(toBybitSymbol);
+const DEFAULT_SYMBOLS = [...BASE_SYMBOLS.map(toBybitSymbol), ...CROSS_PAIRS.map(formatCrossPair.bitget)];
 
 export function createBitgetStream(symbols = DEFAULT_SYMBOLS) {
   const normalized = symbols.map((s) => s.toUpperCase());

@@ -13,3 +13,27 @@ export const toBybitSymbol = (base) => `${base}USDT`;
 export const toOkxInstId = (base) => `${base}-USDT`;
 export const toBitfinexSymbol = (base) => `t${base}USD`;
 export const toMexcSymbol = (base) => `${base}USDT`;
+
+// Optional cross pairs (base/quote) available on most major exchanges.
+export const CROSS_PAIRS = [
+  { base: 'BNB', quote: 'ETH' },
+  { base: 'LINK', quote: 'ETH' },
+  { base: 'SOL', quote: 'ETH' },
+  { base: 'TRX', quote: 'ETH' },
+  { base: 'XRP', quote: 'ETH' },
+  { base: 'ADA', quote: 'ETH' },
+  { base: 'ARB', quote: 'ETH' },
+  { base: 'ZEC', quote: 'ETH' },
+  { base: 'LTC', quote: 'ETH' },
+  { base: 'AAVE', quote: 'ETH' },
+];
+
+export const formatCrossPair = {
+  binance: ({ base, quote }) => `${base}${quote}`.toLowerCase(),
+  bybit: ({ base, quote }) => `${base}${quote}`.toUpperCase(),
+  bitget: ({ base, quote }) => `${base}${quote}`.toUpperCase(),
+  mexc: ({ base, quote }) => `${base}${quote}`.toUpperCase(),
+  okx: ({ base, quote }) => `${base}-${quote}`.toUpperCase(),
+  kucoin: ({ base, quote }) => `${base}-${quote}`.toUpperCase(),
+  bitfinex: ({ base, quote }) => `t${base.toUpperCase()}${quote.toUpperCase()}`,
+};

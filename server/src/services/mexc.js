@@ -1,7 +1,7 @@
 import { PriceStream } from './priceStream.js';
-import { BASE_SYMBOLS, toMexcSymbol } from '../config/symbols.js';
+import { BASE_SYMBOLS, toMexcSymbol, CROSS_PAIRS, formatCrossPair } from '../config/symbols.js';
 
-const DEFAULT_SYMBOLS = BASE_SYMBOLS.map(toMexcSymbol);
+const DEFAULT_SYMBOLS = [...BASE_SYMBOLS.map(toMexcSymbol), ...CROSS_PAIRS.map(formatCrossPair.mexc)];
 
 export function createMexcStream(symbols = DEFAULT_SYMBOLS) {
   const normalized = symbols.map((s) => s.toUpperCase());

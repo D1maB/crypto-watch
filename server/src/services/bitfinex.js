@@ -1,7 +1,7 @@
 import { PriceStream } from './priceStream.js';
-import { BASE_SYMBOLS, toBitfinexSymbol } from '../config/symbols.js';
+import { BASE_SYMBOLS, toBitfinexSymbol, CROSS_PAIRS, formatCrossPair } from '../config/symbols.js';
 
-const DEFAULT_SYMBOLS = BASE_SYMBOLS.map(toBitfinexSymbol);
+const DEFAULT_SYMBOLS = [...BASE_SYMBOLS.map(toBitfinexSymbol), ...CROSS_PAIRS.map(formatCrossPair.bitfinex)];
 
 export function createBitfinexStream(symbols = DEFAULT_SYMBOLS) {
   const normalized = symbols.map((s) => 't' + s.replace(/^t/i, '').toUpperCase());

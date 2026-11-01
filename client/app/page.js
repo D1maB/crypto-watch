@@ -59,7 +59,25 @@ export default function Home() {
     return acc;
   }, {});
 
-  const symbolList = Object.keys(symbolGroups).sort();
+  const quoteOf = (symbol) => {
+  const s = String(symbol).toUpperCase();
+  if (s.endsWith('USDT')) return 'USDT';
+  if (s.endsWith('ETH')) return 'ETH';
+  if (s.endsWith('BTC')) return 'BTC';
+  return 'OTHER';
+};
+const groupLabel = (quote) => {
+  if (quote === 'USDT') return 'USDT pairs';
+  if (quote === 'ETH') return 'ETH pairs';
+  if (quote === 'BTC') return 'BTC pairs';
+  return 'Other pairs';
+};
+const symbolList = Object.keys(symbolGroups).sort((a, b) => {
+  const qa = quoteOf(a);
+  const qb = quoteOf(b);
+  if (qa !== qb) return qa.localeCompare(qb);
+  return String(a).localeCompare(String(b));
+});
 
   return (
     <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
@@ -85,7 +103,11 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody>
-                  {symbolList.map(symbol => {
+                  {symbolList.flatMap((symbol, index) => {
+                    const group = quoteOf(symbol);
+                    const prevGroup = index > 0 ? quoteOf(symbolList[index - 1]) : null;
+                    const isGroupStart = group !== prevGroup;
+                    const rows = [];
                     const items = symbolGroups[symbol];
                     const prices = {
                       binance: items.find(i => i.exchange === 'binance')?.price,
@@ -93,6 +115,8 @@ export default function Home() {
                       bybit: items.find(i => i.exchange === 'bybit')?.price,
                       bitget: items.find(i => i.exchange === 'bitget')?.price,
                       kucoin: items.find(i => i.exchange === 'kucoin')?.price,
+                      mexc: items.find(i => i.exchange === 'mexc')?.price,
+                      bitfinex: items.find(i => i.exchange === 'bitfinex')?.price,
                     };
 
                     const calcDiff = (p1, p2) => {
@@ -106,7 +130,16 @@ export default function Home() {
                       };
                     };
 
-                    return (
+                    if (isGroupStart) {
+                      rows.push(
+                        <tr key={`group-${group}`}>
+                          <td colSpan={1 + EXCHANGE_ORDER.length + EXCHANGE_PAIRS.length} style={{ padding: '0.35rem', fontWeight: 'bold', background: '#f3f4f6' }}>
+                            {groupLabel(group)}
+                          </td>
+                        </tr>
+                      );
+                    }
+                    rows.push(
                       <tr key={symbol} style={{ borderBottom: '1px solid #eee' }}>
                         <td style={{ padding: '0.35rem', fontWeight: 'bold', position: 'sticky', left: 0, background: '#fff', zIndex: 1 }}>{symbol}</td>
                         <td style={{ padding: '0.35rem' }}>${formatNumber(prices.binance)}</td>
@@ -114,6 +147,8 @@ export default function Home() {
                         <td style={{ padding: '0.35rem' }}>${formatNumber(prices.bybit)}</td>
                         <td style={{ padding: '0.35rem' }}>${formatNumber(prices.bitget)}</td>
                         <td style={{ padding: '0.35rem' }}>${formatNumber(prices.kucoin)}</td>
+                        <td style={{ padding: '0.35rem' }}>${formatNumber(prices.mexc)}</td>
+                        <td style={{ padding: '0.35rem' }}>${formatNumber(prices.bitfinex)}</td>
                         {EXCHANGE_PAIRS.map(([a, b]) => {
                           const d = calcDiff(prices[a], prices[b]);
                           return (
@@ -124,6 +159,7 @@ export default function Home() {
                         })}
                       </tr>
                     );
+                    return rows;
                   })}
                 </tbody>
               </table>
