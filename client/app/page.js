@@ -17,6 +17,10 @@ function itemKey(item) {
 }
 
 const EXCHANGE_ORDER = ['binance', 'okx', 'bybit', 'bitget', 'kucoin'];
+const EXCHANGE_LABELS = { binance: 'B', okx: 'O', bybit: 'By', bitget: 'Bit', kucoin: 'Ku' };
+const EXCHANGE_PAIRS = EXCHANGE_ORDER.flatMap((a, i) =>
+  EXCHANGE_ORDER.slice(i + 1).map((b) => [a, b])
+);
 
 export default function Home() {
   const [prices, setPrices] = useState({});
@@ -88,11 +92,11 @@ export default function Home() {
                   <tr style={{ borderBottom: '2px solid #ddd' }}>
                     <th style={{ padding: '0.75rem' }}>Symbol</th>
                     {EXCHANGE_ORDER.map(ex => <th key={ex} style={{ padding: '0.75rem', textTransform: 'capitalize' }}>{ex}</th>)}
-                    <th style={{ padding: '0.75rem' }}>Diff (B vs O)</th>
-                    <th style={{ padding: '0.75rem' }}>Diff (B vs By)</th>
-                    <th style={{ padding: '0.75rem' }}>Diff (O vs By)</th>
-                    <th style={{ padding: '0.75rem' }}>Diff (B vs Bit)</th>
-                    <th style={{ padding: '0.75rem' }}>Diff (B vs Ku)</th>
+                    {EXCHANGE_PAIRS.map(([a, b]) => (
+                      <th key={`${a}-${b}`} style={{ padding: '0.75rem' }}>
+                        Diff ({EXCHANGE_LABELS[a]} vs {EXCHANGE_LABELS[b]})
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -117,12 +121,6 @@ export default function Home() {
                       };
                     };
 
-                    const bvsO = calcDiff(prices.binance, prices.okx);
-                    const bvsBy = calcDiff(prices.binance, prices.bybit);
-                    const ovsBy = calcDiff(prices.okx, prices.bybit);
-                    const bvsBit = calcDiff(prices.binance, prices.bitget);
-                    const bvsKu = calcDiff(prices.binance, prices.kucoin);
-
                     return (
                       <tr key={symbol} style={{ borderBottom: '1px solid #eee' }}>
                         <td style={{ padding: '0.75rem', fontWeight: 'bold' }}>{symbol}</td>
@@ -131,11 +129,14 @@ export default function Home() {
                         <td style={{ padding: '0.75rem' }}>${formatNumber(prices.bybit)}</td>
                         <td style={{ padding: '0.75rem' }}>${formatNumber(prices.bitget)}</td>
                         <td style={{ padding: '0.75rem' }}>${formatNumber(prices.kucoin)}</td>
-                        <td style={{ padding: '0.75rem', color: bvsO.color }}>{bvsO.text}</td>
-                        <td style={{ padding: '0.75rem', color: bvsBy.color }}>{bvsBy.text}</td>
-                        <td style={{ padding: '0.75rem', color: ovsBy.color }}>{ovsBy.text}</td>
-                        <td style={{ padding: '0.75rem', color: bvsBit.color }}>{bvsBit.text}</td>
-                        <td style={{ padding: '0.75rem', color: bvsKu.color }}>{bvsKu.text}</td>
+                        {EXCHANGE_PAIRS.map(([a, b]) => {
+                          const d = calcDiff(prices[a], prices[b]);
+                          return (
+                            <td key={`${a}-${b}`} style={{ padding: '0.75rem', color: d.color }}>
+                              {d.text}
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })}
