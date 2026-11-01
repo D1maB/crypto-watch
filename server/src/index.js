@@ -6,6 +6,8 @@ import { PORT, CLIENT_ORIGIN } from './config/env.js';
 import { createBinanceStream } from './services/binance.js';
 import { createOkxStream } from './services/okx.js';
 import { createBybitStream } from './services/bybit.js';
+import { createBitgetStream } from './services/bitget.js';
+import { createKucoinStream } from './services/kucoin.js';
 
 const app = express();
 app.use(cors({ origin: CLIENT_ORIGIN }));
@@ -14,16 +16,20 @@ app.use(express.json());
 const binance = createBinanceStream();
 const okx = createOkxStream();
 const bybit = createBybitStream();
+const bitget = createBitgetStream();
+const kucoin = createKucoinStream();
 binance.start();
 okx.start();
 bybit.start();
+bitget.start();
+kucoin.start();
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
 app.get('/api/prices', (_req, res) => {
-  res.json([...binance.snapshot(), ...okx.snapshot(), ...bybit.snapshot()]);
+  res.json([...binance.snapshot(), ...okx.snapshot(), ...bybit.snapshot(), ...bitget.snapshot(), ...kucoin.snapshot()]);
 });
 
 const server = http.createServer(app);
@@ -40,12 +46,14 @@ function broadcast(payload) {
 }
 
 wss.on('connection', (socket) => {
-  socket.send(JSON.stringify({ type: 'snapshot', data: [...binance.snapshot(), ...okx.snapshot(), ...bybit.snapshot()] }));
+  socket.send(JSON.stringify({ type: 'snapshot', data: [...binance.snapshot(), ...okx.snapshot(), ...bybit.snapshot(), ...bitget.snapshot(), ...kucoin.snapshot()] }));
 });
 
 binance.onUpdate((update) => broadcast({ type: 'update', data: update }));
 okx.onUpdate((update) => broadcast({ type: 'update', data: update }));
 bybit.onUpdate((update) => broadcast({ type: 'update', data: update }));
+bitget.onUpdate((update) => broadcast({ type: 'update', data: update }));
+kucoin.onUpdate((update) => broadcast({ type: 'update', data: update }));
 
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
@@ -55,5 +63,7 @@ process.on('SIGTERM', () => {
   binance.stop();
   okx.stop();
   bybit.stop();
+  bitget.stop();
+  kucoin.stop();
   server.close(() => process.exit(0));
 });
