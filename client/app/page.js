@@ -203,7 +203,7 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
         {watchSymbols.length === 0 ? (
           <p style={{ margin: 0 }}>Waiting for a ticker with over 1% movement...</p>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(240px, 1fr))', gap: '1rem' }}>
             {watchSymbols.map((symbol, idx) => {
               const items = symbolGroups[symbol] ?? [];
               const available = EXCHANGE_ORDER.filter((ex) => items.some((item) => item.exchange === ex));
