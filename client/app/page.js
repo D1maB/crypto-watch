@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const WS_BASE = process.env.NEXT_PUBLIC_WS_BASE ?? 'ws://localhost:4000/ws';
 
@@ -25,6 +25,7 @@ const EXCHANGE_PAIRS = EXCHANGE_ORDER.flatMap((a, i) =>
 export default function Home() {
   const [prices, setPrices] = useState({});
   const [status, setStatus] = useState('connecting');
+  const prevPricesRef = useRef(new Map());
 
   useEffect(() => {
     const ws = new WebSocket(WS_BASE);
@@ -38,10 +39,22 @@ export default function Home() {
         const msg = JSON.parse(event.data);
         if (msg.type === 'snapshot') {
           const next = {};
-          for (const item of msg.data ?? []) next[itemKey(item)] = item;
+          for (const item of msg.data ?? []) {
+            const key = itemKey(item);
+            next[key] = { ...item, rtChangePercent: null };
+            prevPricesRef.current.set(key, item.price);
+          }
           setPrices(next);
         } else if (msg.type === 'update') {
-          setPrices((prev) => ({ ...prev, [itemKey(msg.data)]: msg.data }));
+          const key = itemKey(msg.data);
+          const prev = prevPricesRef.current.get(key);
+          const price = Number(msg.data.price);
+          const rtChangePercent =
+            Number.isFinite(prev) && Number.isFinite(price) && prev !== 0
+              ? ((price - prev) / prev) * 100
+              : null;
+          prevPricesRef.current.set(key, price);
+          setPrices((prev) => ({ ...prev, [key]: { ...msg.data, rtChangePercent } }));
         }
       } catch (err) {
         console.error('ws parse error', err);
@@ -52,9 +65,13 @@ export default function Home() {
   }, []);
 
   const entries = Object.values(prices);
-  const topMovers = entries
+  const top24hMovers = entries
     .filter((item) => Math.abs(Number(item.changePercent)) >= 1)
     .sort((a, b) => Math.abs(Number(b.changePercent)) - Math.abs(Number(a.changePercent)))
+    .slice(0, 2);
+  const realtimeMovers = entries
+    .filter((item) => Number.isFinite(item.rtChangePercent))
+    .sort((a, b) => Math.abs(Number(b.rtChangePercent)) - Math.abs(Number(a.rtChangePercent)))
     .slice(0, 2);
   // Group by normalized symbol for comparison
   const symbolGroups = entries.reduce((acc, item) => {
@@ -87,11 +104,25 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
     <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
       <h1 style={{ marginTop: 0 }}>Crypto Watch</h1>
       <p>Status: {status}</p>
-      {topMovers.length > 0 && (
+      {realtimeMovers.length > 0 && (
         <section style={{ marginBottom: '1.5rem' }}>
-          <h2 style={{ marginBottom: '0.5rem' }}>Top Movers (over 1%)</h2>
+          <h2 style={{ marginBottom: '0.5rem' }}>Realtime Top Movers</h2>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            {topMovers.map((item) => (
+            {realtimeMovers.map((item) => (
+              <li key={itemKey(item)} style={{ padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
+                <strong>{String(item.symbol).toUpperCase()}</strong> ({item.exchange})<br />
+                ${formatNumber(item.price)} — {Number(item.rtChangePercent) >= 0 ? '+' : ''}
+                {formatNumber(item.rtChangePercent)}%
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {top24hMovers.length > 0 && (
+        <section style={{ marginBottom: '1.5rem' }}>
+          <h2 style={{ marginBottom: '0.5rem' }}>24h Top Movers (over 1%)</h2>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            {top24hMovers.map((item) => (
               <li key={itemKey(item)} style={{ padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
                 <strong>{String(item.symbol).toUpperCase()}</strong> ({item.exchange})<br />
                 ${formatNumber(item.price)} — {Number(item.changePercent) >= 0 ? '+' : ''}
