@@ -178,7 +178,7 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
   useEffect(() => {
     const qualifying = [...new Set(entries
       .filter((item) => Math.abs(Number(item.changePercent)) >= 2)
-      .map((item) => String(item.symbol).replace('-', '').toUpperCase()))];
+      .map((item) => String(item.symbol).replace('-', '').toUpperCase()))].slice(0, 5);
     const newSymbols = qualifying.filter((symbol) => !watchSymbolsRef.current.has(symbol));
 
     if (newSymbols.length > 0) {
