@@ -213,6 +213,7 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
             </span>
           )}
           <span style={{ fontWeight: 'bold' }}>{watchSampleCount} samples</span>
+        </div>
       </section>
       {crossMovers.length > 0 && (
         <section style={{ marginBottom: '1.5rem' }}>
