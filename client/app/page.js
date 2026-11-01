@@ -25,6 +25,7 @@ const EXCHANGE_PAIRS = EXCHANGE_ORDER.flatMap((a, i) =>
 export default function Home() {
   const [prices, setPrices] = useState({});
   const [status, setStatus] = useState('connecting');
+  const [showComparison, setShowComparison] = useState(false);
   const prevPricesRef = useRef(new Map());
 
   useEffect(() => {
@@ -170,8 +171,15 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
         <p>Waiting for prices…</p>
       ) : (
         <>
-          <section style={{ marginBottom: '3rem' }}>
-            <h2 style={{ marginBottom: '1rem' }}>Price Comparison ({symbolList.length} tickers)</h2>
+          <button
+            onClick={() => setShowComparison((value) => !value)}
+            style={{ marginBottom: '1rem', padding: '0.5rem 0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff', cursor: 'pointer' }}
+          >
+            {showComparison ? 'Hide' : 'Show'} Price Comparison Table
+          </button>
+          {showComparison ? (
+            <section style={{ marginBottom: '3rem' }}>
+              <h2 style={{ marginBottom: '1rem' }}>Price Comparison ({symbolList.length} tickers)</h2>
             <div style={{ overflow: 'auto', maxHeight: '70vh', border: '1px solid #eee', borderRadius: '8px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                 <thead>
@@ -248,6 +256,7 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
               </table>
             </div>
           </section>
+          ) : null}
 
         </>
       )}
