@@ -119,12 +119,50 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
         <section style={{ marginBottom: '1.5rem' }}>
           <h2 style={{ marginBottom: '0.5rem' }}>Realtime Top Movers</h2>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            {crossMovers.map((item, idx) => (
-              <li key={`${item.symbol}-${item.exA}-${item.exB}-${idx}`} style={{ padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
-                <strong>{String(item.symbol).toUpperCase()}</strong> - {item.exA}(${formatNumber(item.priceA)}) -&gt; {item.exB}(${formatNumber(item.priceB)}) - diff({Number(item.diff) >= 0 ? '+' : ''}
-                {item.diff.toFixed(2)}%)
-              </li>
-            ))}
+            {crossMovers.map((item, idx) => {
+              const positive = item.diff >= 0;
+              return (
+                <li
+                  key={`${item.symbol}-${item.exA}-${item.exB}-${idx}`}
+                  style={{
+                    flex: '1 1 260px',
+                    padding: '1rem',
+                    border: `1px solid ${positive ? '#bbf7d0' : '#fecaca'}`,
+                    borderRadius: '12px',
+                    background: positive ? 'linear-gradient(135deg, #f0fdf4, #ecfeff)' : 'linear-gradient(135deg, #fef2f2, #fff7ed)',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <strong style={{ fontSize: '1rem' }}>{String(item.symbol).toUpperCase()}</strong>
+                    <span
+                      style={{
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '999px',
+                        background: positive ? '#16a34a' : '#dc2626',
+                        color: '#fff',
+                        fontWeight: 'bold',
+                        fontSize: '0.85rem',
+                      }}
+                    >
+                      {positive ? '+' : ''}
+                      {item.diff.toFixed(2)}%
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                    <div style={{ textAlign: 'center', flex: 1 }}>
+                      <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{item.exA}</div>
+                      <div style={{ fontWeight: 'bold' }}>${formatNumber(item.priceA)}</div>
+                    </div>
+                    <div style={{ fontSize: '1.2rem', color: '#666' }}>&rarr;</div>
+                    <div style={{ textAlign: 'center', flex: 1 }}>
+                      <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{item.exB}</div>
+                      <div style={{ fontWeight: 'bold' }}>${formatNumber(item.priceB)}</div>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
