@@ -86,14 +86,14 @@ export default function Home() {
         <>
           <section style={{ marginBottom: '3rem' }}>
             <h2 style={{ marginBottom: '1rem' }}>Price Comparison</h2>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+            <div style={{ overflow: 'auto', maxHeight: '70vh', border: '1px solid #eee', borderRadius: '8px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid #ddd' }}>
-                    <th style={{ padding: '0.75rem' }}>Symbol</th>
-                    {EXCHANGE_ORDER.map(ex => <th key={ex} style={{ padding: '0.75rem', textTransform: 'capitalize' }}>{ex}</th>)}
+                    <th style={{ padding: '0.35rem', position: 'sticky', left: 0, top: 0, background: '#fff', zIndex: 4, fontWeight: 'bold' }}>Symbol</th>
+                    {EXCHANGE_ORDER.map(ex => <th key={ex} style={{ padding: '0.35rem', textTransform: 'capitalize', position: 'sticky', top: 0, background: '#fff', zIndex: 2 }}>{ex}</th>)}
                     {EXCHANGE_PAIRS.map(([a, b]) => (
-                      <th key={`${a}-${b}`} style={{ padding: '0.75rem' }}>
+                      <th key={`${a}-${b}`} style={{ padding: '0.35rem', position: 'sticky', top: 0, background: '#fff', zIndex: 2 }}>
                         Diff ({EXCHANGE_LABELS[a]} vs {EXCHANGE_LABELS[b]})
                       </th>
                     ))}
@@ -123,16 +123,16 @@ export default function Home() {
 
                     return (
                       <tr key={symbol} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '0.75rem', fontWeight: 'bold' }}>{symbol}</td>
-                        <td style={{ padding: '0.75rem' }}>${formatNumber(prices.binance)}</td>
-                        <td style={{ padding: '0.75rem' }}>${formatNumber(prices.okx)}</td>
-                        <td style={{ padding: '0.75rem' }}>${formatNumber(prices.bybit)}</td>
-                        <td style={{ padding: '0.75rem' }}>${formatNumber(prices.bitget)}</td>
-                        <td style={{ padding: '0.75rem' }}>${formatNumber(prices.kucoin)}</td>
+                        <td style={{ padding: '0.35rem', fontWeight: 'bold', position: 'sticky', left: 0, background: '#fff', zIndex: 1 }}>{symbol}</td>
+                        <td style={{ padding: '0.35rem' }}>${formatNumber(prices.binance)}</td>
+                        <td style={{ padding: '0.35rem' }}>${formatNumber(prices.okx)}</td>
+                        <td style={{ padding: '0.35rem' }}>${formatNumber(prices.bybit)}</td>
+                        <td style={{ padding: '0.35rem' }}>${formatNumber(prices.bitget)}</td>
+                        <td style={{ padding: '0.35rem' }}>${formatNumber(prices.kucoin)}</td>
                         {EXCHANGE_PAIRS.map(([a, b]) => {
                           const d = calcDiff(prices[a], prices[b]);
                           return (
-                            <td key={`${a}-${b}`} style={{ padding: '0.75rem', color: d.color }}>
+                            <td key={`${a}-${b}`} style={{ padding: '0.35rem', color: d.color }}>
                               {d.text}
                             </td>
                           );
