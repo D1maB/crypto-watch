@@ -198,22 +198,75 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
     <main style={{ padding: '1rem', fontFamily: 'sans-serif', fontSize: '0.9rem' }}>
       <h1 style={{ marginTop: 0 }}>Crypto Watch</h1>
       <p>Status: {status}</p>
-      <section style={{ marginBottom: '1.5rem', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
-        <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Watch Ticker</h2>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.75rem' }}>
-          <span>Auto (20 min) when a ticker moves over 1%: {watchSymbols.length ? watchSymbols.join(', ') : 'waiting...'}</span>
-          {watching && (
+      <section style={{ marginBottom: '1.5rem' }}>
+        <h2 style={{ marginBottom: '0.5rem' }}>Watch Ticker</h2>
+        {watchSymbols.length === 0 ? (
+          <p style={{ margin: 0 }}>Waiting for a ticker with over 1% movement...</p>
+        ) : (
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            {watchSymbols.map((symbol, idx) => {
+              const items = symbolGroups[symbol] ?? [];
+              const available = EXCHANGE_ORDER.filter((ex) => items.some((item) => item.exchange === ex));
+              const first = available[0];
+              const second = available[1] ?? available[0];
+              const priceA = items.find((item) => item.exchange === first)?.price;
+              const priceB = items.find((item) => item.exchange === second)?.price;
+              const diff = priceA && priceB ? ((Number(priceB) - Number(priceA)) / Number(priceA)) * 100 : null;
+              return (
+                <li
+                  key={`${symbol}-${idx}`}
+                  style={{
+                    flex: '1 1 280px',
+                    padding: '1rem',
+                    border: '1px solid #dbeafe',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #eff6ff, #f0fdf4)',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <strong style={{ fontSize: '1rem' }}>{symbol}</strong>
+                    {watching && (
+                      <span style={{ padding: '0.25rem 0.5rem', borderRadius: '999px', background: '#2563eb', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                        {Math.floor(watchRemaining / 60)}:{String(watchRemaining % 60).padStart(2, '0')}
+                      </span>
+                    )}
+                  </div>
+                  {first && second ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                      <div style={{ textAlign: 'center', flex: 1 }}>
+                        <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{first}</div>
+                        <div style={{ fontWeight: 'bold' }}>${formatNumber(priceA)}</div>
+                      </div>
+                      <div style={{ fontSize: '1.2rem', color: '#666' }}>&rarr;</div>
+                      <div style={{ textAlign: 'center', flex: 1 }}>
+                        <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{second}</div>
+                        <div style={{ fontWeight: 'bold' }}>${formatNumber(priceB)}</div>
+                      </div>
+                      <div style={{ textAlign: 'center', flex: 1 }}>
+                        <div style={{ fontSize: '0.75rem', color: '#555' }}>diff</div>
+                        <div style={{ fontWeight: 'bold', color: diff >= 0 ? '#16a34a' : '#dc2626' }}>
+                          {diff >= 0 ? '+' : ''}
+                          {Number.isFinite(diff) ? diff.toFixed(2) : '—'}%
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>Waiting for exchange prices...</div>
+                  )}
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#666' }}>{watchSampleCount} samples recorded</div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {watching && (
+          <div style={{ marginTop: '0.75rem' }}>
             <button onClick={stopWatch} style={{ padding: '0.35rem 0.65rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff', cursor: 'pointer' }}>
               Stop
             </button>
-          )}
-          {watching && (
-            <span style={{ fontWeight: 'bold' }}>
-              Time left: {Math.floor(watchRemaining / 60)}:{String(watchRemaining % 60).padStart(2, '0')}
-            </span>
-          )}
-          <span style={{ fontWeight: 'bold' }}>{watchSampleCount} samples</span>
-        </div>
+          </div>
+        )}
       </section>
       {crossMovers.length > 0 && (
         <section style={{ marginBottom: '1.5rem' }}>
