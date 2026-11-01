@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { WATCH_APPEND_DIFF_THRESHOLD } from '../config/watch.js';
 
 const WS_BASE = process.env.NEXT_PUBLIC_WS_BASE ?? 'ws://localhost:4000/ws';
 
-function formatNumber(value, digits = 2) {
+function formatNumber(value, digits = 4) {
   if (value == null || Number.isNaN(value)) return '—';
   return value.toLocaleString(undefined, {
     minimumFractionDigits: digits,
@@ -91,7 +92,7 @@ export default function Home() {
     return acc;
   }, {});
 
-  const crossMovers = Object.entries(symbolGroups).flatMap(([symbol, items]) => {
+  const allExchangePairs = Object.entries(symbolGroups).flatMap(([symbol, items]) => {
     const prices = items
       .map((item) => ({ ex: item.exchange, price: Number(item.price) }))
       .filter((item) => Number.isFinite(item.price));
@@ -105,9 +106,52 @@ export default function Home() {
       }
     }
     return pairs;
-  })
-    .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
-    .slice(0, 2);
+  }).sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff)).filter((item) => Math.abs(item.diff) < 20);
+
+  const crossMovers = allExchangePairs.slice(0, 2);
+
+  const [watchedMovers, setWatchedMovers] = useState([]);
+  useEffect(() => {
+    const qualifying = allExchangePairs.filter((item) => Math.abs(item.diff) > WATCH_APPEND_DIFF_THRESHOLD);
+    setWatchedMovers((prev) => {
+      const keyOf = (item) => `${item.symbol}-${item.exA}-${item.exB}`;
+      const freshByKey = new Map(qualifying.map((item) => [keyOf(item), item]));
+      const updated = prev.map((item) => {
+        const fresh = freshByKey.get(keyOf(item)) ?? item;
+        const currentDiff = Number.isFinite(fresh.diff) ? fresh.diff : item.diff;
+        const previousMax = Number.isFinite(item.maxDiff) ? item.maxDiff : (Number.isFinite(item.firstDiff) ? item.firstDiff : currentDiff);
+        const nextMax = Math.abs(currentDiff) > Math.abs(previousMax) ? currentDiff : previousMax;
+        return {
+          ...fresh,
+          addedAt: item.addedAt ?? Date.now(),
+          firstDiff: item.firstDiff ?? fresh.diff,
+          maxDiff: nextMax,
+        };
+      });
+      const existing = new Set(updated.map(keyOf));
+      const additions = qualifying
+        .filter((item) => !existing.has(keyOf(item)))
+        .map((item) => ({ ...item, addedAt: Date.now(), firstDiff: item.diff, maxDiff: item.diff }));
+      return [...updated, ...additions].slice(-12);
+    });
+  }, [allExchangePairs]);
+
+  const liveWatchedMovers = watchedMovers
+    .map((item) => {
+      const key = `${item.symbol}-${item.exA}-${item.exB}`;
+      const fresh = allExchangePairs.find((candidate) => `${candidate.symbol}-${candidate.exA}-${candidate.exB}` === key) ?? item;
+      const currentDiff = Number.isFinite(fresh.diff) ? fresh.diff : item.diff;
+      const previousMax = Number.isFinite(item.maxDiff) ? item.maxDiff : (Number.isFinite(item.firstDiff) ? item.firstDiff : currentDiff);
+      const nextMax = Math.abs(currentDiff) > Math.abs(previousMax) ? currentDiff : previousMax;
+      return { ...fresh, addedAt: item.addedAt ?? Date.now(), firstDiff: item.firstDiff ?? fresh.diff, maxDiff: nextMax };
+    })
+    .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
+
+  const groupedWatchedMovers = liveWatchedMovers.reduce((acc, item) => {
+    const key = String(item.symbol).toUpperCase();
+    (acc[key] ??= []).push(item);
+    return acc;
+  }, {});
 
   const quoteOf = (symbol) => {
   const s = String(symbol).toUpperCase();
@@ -158,16 +202,6 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
     };
   }, [watching, watchMinutes]);
 
-  const startWatch = () => {
-    if (!watchSymbol) return;
-    watchingRef.current = true;
-    watchSymbolRef.current = watchSymbol;
-    setWatching(true);
-    setWatchStartPrice(null);
-    setWatchStartAt(Date.now());
-    setWatchHistory([]);
-  };
-
   const stopWatch = () => {
     watchingRef.current = false;
     setWatching(false);
@@ -194,104 +228,95 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
   }, [entries, watching]);
 
   return (
-    <main style={{ padding: '1rem', fontFamily: 'sans-serif', fontSize: '0.9rem' }}>
+    <main style={{ padding: '1rem', fontFamily: 'sans-serif', fontSize: '1rem' }}>
       <h1 style={{ marginTop: 0 }}>Crypto Watch</h1>
-      <p>Status: {status}</p>
+      <p>Status: {status} · Tickers: {symbolList.length}</p>
       <section style={{ marginBottom: '1.5rem' }}>
         <h2 style={{ marginBottom: '0.5rem' }}>Watch Ticker</h2>
-        {crossMovers.length === 0 ? (
+        <p style={{ margin: '0 0 0.75rem', fontSize: '0.925rem', color: '#666' }}>New items are appended when an exchange pair differs by more than {WATCH_APPEND_DIFF_THRESHOLD}%.</p>
+        {liveWatchedMovers.length === 0 ? (
           <p style={{ margin: 0 }}>Waiting for realtime exchange differences...</p>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(240px, 1fr))', gap: '1rem' }}>
-            {crossMovers.map((item, idx) => (
-              <li
-                key={`${item.symbol}-${item.exA}-${item.exB}-${idx}`}
-                style={{
-                  flex: '1 1 280px',
-                  padding: '1rem',
-                  border: '1px solid #dbeafe',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #eff6ff, #f0fdf4)',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <strong style={{ fontSize: '1rem' }}>{item.symbol}</strong>
-                  {watching && (
-                    <span style={{ padding: '0.25rem 0.5rem', borderRadius: '999px', background: '#2563eb', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                      {Math.floor(watchRemaining / 60)}:{String(watchRemaining % 60).padStart(2, '0')}
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                  <div style={{ textAlign: 'left', flex: 1 }}>
-                    <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{item.exA}</div>
-                    <div style={{ fontWeight: 'bold' }}>${formatNumber(item.priceA)}</div>
-                  </div>
-                  <div style={{ fontSize: '1.2rem', color: '#666' }}>&rarr;</div>
-                  <div style={{ textAlign: 'left', flex: 1 }}>
-                    <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{item.exB}</div>
-                    <div style={{ fontWeight: 'bold' }}>${formatNumber(item.priceB)}</div>
-                  </div>
-                  <div style={{ textAlign: 'left', flex: 1 }}>
-                    <div style={{ fontSize: '0.75rem', color: '#555' }}>diff</div>
-                    <div style={{ fontWeight: 'bold', color: item.diff >= 0 ? '#16a34a' : '#dc2626' }}>
-                      {item.diff >= 0 ? '+' : ''}
-                      {item.diff.toFixed(2)}%
-                    </div>
-                  </div>
-                </div>
-                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#666' }}>{watchSampleCount} samples recorded</div>
-              </li>
-            ))}
-          </ul>
-        )}
-                <li
-                  key={`${symbol}-${idx}`}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(240px, 1fr))', gap: '1rem' }}>
+            {Object.entries(groupedWatchedMovers).map(([symbol, items]) => {
+              const representative = items[0];
+              const positive = (representative?.diff ?? 0) >= 0;
+              return (
+                <div
+                  key={symbol}
                   style={{
-                    flex: '1 1 280px',
                     padding: '1rem',
-                    border: '1px solid #dbeafe',
+                    border: `1px solid ${positive ? '#bbf7d0' : '#fecaca'}`,
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #eff6ff, #f0fdf4)',
+                    background: positive ? 'linear-gradient(135deg, #f0fdf4, #ecfeff)' : 'linear-gradient(135deg, #fef2f2, #fff7ed)',
                     boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <strong style={{ fontSize: '1rem' }}>{symbol}</strong>
-                    {watching && (
-                      <span style={{ padding: '0.25rem 0.5rem', borderRadius: '999px', background: '#2563eb', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                        {Math.floor(watchRemaining / 60)}:{String(watchRemaining % 60).padStart(2, '0')}
+                    <strong style={{ fontSize: '1rem' }}>
+                      {symbol}
+                      <span style={{ marginLeft: '0.5rem', fontSize: '0.925rem', fontWeight: 'bold', display: 'inline-flex', flexDirection: 'column', gap: '0.2rem' }}>
+                        <span style={{ color: (items[0]?.firstDiff ?? 0) >= 0 ? '#16a34a' : '#dc2626' }}>
+                          {(items[0]?.firstDiff ?? 0) >= 0 ? '+' : ''}
+                          {(items[0]?.firstDiff ?? 0).toFixed(2)}%
+                          <span style={{ marginLeft: '0.35rem', color: '#666', fontWeight: 'normal', fontSize: '0.7rem' }}>
+                            (first diff: {String(items[0]?.exA ?? '').toUpperCase()} → {String(items[0]?.exB ?? '').toUpperCase()})
+                          </span>
+                        </span>
+                        <span style={{ color: (items.reduce((max, item) => Math.abs(item.diff) > Math.abs(max.diff) ? item : max, items[0])?.diff ?? 0) >= 0 ? '#16a34a' : '#dc2626' }}>
+                          {(() => {
+                            const max = items.reduce((current, item) => Math.abs(item.diff) > Math.abs(current.diff) ? item : current, items[0]);
+                            return `${max.diff >= 0 ? '+' : ''}${max.diff.toFixed(2)}%`;
+                          })()}
+                          <span style={{ marginLeft: '0.35rem', color: '#666', fontWeight: 'normal', fontSize: '0.7rem' }}>
+                            (max diff: {String(items.reduce((current, item) => Math.abs(item.diff) > Math.abs(current.diff) ? item : current, items[0]).exA ?? '').toUpperCase()} → {String(items.reduce((current, item) => Math.abs(item.diff) > Math.abs(current.diff) ? item : current, items[0]).exB ?? '').toUpperCase()})
+                          </span>
+                        </span>
                       </span>
-                    )}
+                    </strong>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }}>
+                      {(() => {
+                        const addedAt = items.reduce((earliest, item) => Math.min(earliest, item.addedAt ?? Date.now()), Infinity);
+                        const elapsed = Math.max(0, Math.floor((Date.now() - addedAt) / 1000));
+                        return (
+                          <span style={{ padding: '0.25rem 0.5rem', borderRadius: '999px', background: '#2563eb', color: '#fff', fontSize: '0.925rem', fontWeight: 'bold' }}>
+                            {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')}
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </div>
-                  {first && second ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                      <div style={{ textAlign: 'left', flex: 1 }}>
-                        <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{first}</div>
-                        <div style={{ fontWeight: 'bold' }}>${formatNumber(priceA)}</div>
-                      </div>
-                      <div style={{ fontSize: '1.2rem', color: '#666' }}>&rarr;</div>
-                      <div style={{ textAlign: 'left', flex: 1 }}>
-                        <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{second}</div>
-                        <div style={{ fontWeight: 'bold' }}>${formatNumber(priceB)}</div>
-                      </div>
-                      <div style={{ textAlign: 'left', flex: 1 }}>
-                        <div style={{ fontSize: '0.75rem', color: '#555' }}>diff</div>
-                        <div style={{ fontWeight: 'bold', color: diff >= 0 ? '#16a34a' : '#dc2626' }}>
-                          {diff >= 0 ? '+' : ''}
-                          {Number.isFinite(diff) ? diff.toFixed(2) : '—'}%
+                  <div style={{ display: 'grid', gap: '0.5rem' }}>
+                    {items.map((item, idx) => (
+                      <div
+                        key={`${item.symbol}-${item.exA}-${item.exB}-${idx}`}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}
+                      >
+                        <div style={{ textAlign: 'left', flex: 1 }}>
+                          <div style={{ fontSize: '0.875rem', color: '#555', textTransform: 'capitalize' }}>{item.exA}</div>
+                          <div style={{ fontWeight: 'bold' }}>${formatNumber(item.priceA)}</div>
+                        </div>
+                        <div style={{ fontSize: '1.2rem', color: '#666' }}>&rarr;</div>
+                        <div style={{ textAlign: 'left', flex: 1 }}>
+                          <div style={{ fontSize: '0.875rem', color: '#555', textTransform: 'capitalize' }}>{item.exB}</div>
+                          <div style={{ fontWeight: 'bold' }}>${formatNumber(item.priceB)}</div>
+                        </div>
+                        <div style={{ textAlign: 'left', flex: 1 }}>
+                          <div style={{ fontSize: '0.875rem', color: '#555' }}>diff</div>
+                          <div style={{ fontWeight: 'bold', color: item.diff >= 0 ? '#16a34a' : '#dc2626' }}>
+                            {item.diff >= 0 ? '+' : ''}
+                            {item.diff.toFixed(2)}%
+                          </div>
+
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div>Waiting for exchange prices...</div>
-                  )}
-                  <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#666' }}>{watchSampleCount} samples recorded</div>
-                </li>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#666' }}>{watchSampleCount} samples recorded</div>
+                </div>
               );
             })}
-          </ul>
+          </div>
         )}
         {watching && (
           <div style={{ marginTop: '0.75rem' }}>
@@ -337,12 +362,12 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                     <div style={{ textAlign: 'left', flex: 1 }}>
-                      <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{item.exA}</div>
+                      <div style={{ fontSize: '0.875rem', color: '#555', textTransform: 'capitalize' }}>{item.exA}</div>
                       <div style={{ fontWeight: 'bold' }}>${formatNumber(item.priceA)}</div>
                     </div>
                     <div style={{ fontSize: '1.2rem', color: '#666' }}>&rarr;</div>
                     <div style={{ textAlign: 'left', flex: 1 }}>
-                      <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{item.exB}</div>
+                      <div style={{ fontSize: '0.875rem', color: '#555', textTransform: 'capitalize' }}>{item.exB}</div>
                       <div style={{ fontWeight: 'bold' }}>${formatNumber(item.priceB)}</div>
                     </div>
                   </div>
@@ -366,7 +391,7 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
             <section style={{ marginBottom: '3rem' }}>
               <h2 style={{ marginBottom: '1rem' }}>Price Comparison ({symbolList.length} tickers)</h2>
             <div style={{ overflow: 'auto', maxHeight: '70vh', border: '1px solid #eee', borderRadius: '8px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.925rem', whiteSpace: 'nowrap' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid #ddd' }}>
                     <th style={{ padding: '0.35rem', position: 'sticky', left: 0, top: 0, background: '#fff', zIndex: 4, fontWeight: 'bold' }}>Symbol</th>

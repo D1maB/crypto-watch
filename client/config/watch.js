@@ -1,0 +1,1 @@
+export const WATCH_APPEND_DIFF_THRESHOLD = 2;
