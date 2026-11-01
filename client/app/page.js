@@ -150,12 +150,6 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
         watchingRef.current = false;
         if (watchIntervalRef.current) clearInterval(watchIntervalRef.current);
         watchIntervalRef.current = null;
-        try {
-          localStorage.setItem(
-            `watch_${watchSymbolRef.current}_${Date.now()}`,
-            JSON.stringify({ symbol: watchSymbolRef.current, history: watchHistory }, null, 0)
-          );
-        } catch (e) {}
       }
     }, 1000);
 
@@ -177,12 +171,6 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
   const stopWatch = () => {
     watchingRef.current = false;
     setWatching(false);
-    try {
-      localStorage.setItem(
-        `watch_${watchSymbolRef.current}_${Date.now()}`,
-        JSON.stringify({ symbol: watchSymbolRef.current, history: watchHistory }, null, 0)
-      );
-    } catch (e) {}
   };
 
   useEffect(() => {
@@ -224,23 +212,9 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
             </span>
           )}
         </div>
-        {watchHistory.length >= 2 && (
-          <div>
-            <svg width="360" height="140" style={{ border: '1px solid #eee', borderRadius: '8px', background: '#fafafa' }}>
-              {(() => {
-                const vals = watchHistory.map((p) => p.price);
-                const min = Math.min(...vals);
-                const max = Math.max(...vals);
-                const pad = 10;
-                const w = 360;
-                const h = 140;
-                const points = watchHistory
-                  .map((p, i) => `${pad + (i / (watchHistory.length - 1)) * (w - pad * 2)},${h - pad - ((p.price - min) / (max - min || 1)) * (h - pad * 2)}`)
-                  .join(' ');
-                return <polyline points={points} fill="none" stroke="#2563eb" strokeWidth="2" />;
-              })()}
-            </svg>
-            <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.35rem' }}>Saved {watchHistory.length} samples to browser storage on stop.</div>
+        {watchHistory.length > 0 && (
+          <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.35rem' }}>
+            Watching {watchSymbol} ({watchHistory.length} samples)
           </div>
         )}
       </section>
