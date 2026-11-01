@@ -234,16 +234,16 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
                   </div>
                   {first && second ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                      <div style={{ textAlign: 'center', flex: 1 }}>
+                      <div style={{ textAlign: 'left', flex: 1 }}>
                         <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{first}</div>
                         <div style={{ fontWeight: 'bold' }}>${formatNumber(priceA)}</div>
                       </div>
                       <div style={{ fontSize: '1.2rem', color: '#666' }}>&rarr;</div>
-                      <div style={{ textAlign: 'center', flex: 1 }}>
+                      <div style={{ textAlign: 'left', flex: 1 }}>
                         <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{second}</div>
                         <div style={{ fontWeight: 'bold' }}>${formatNumber(priceB)}</div>
                       </div>
-                      <div style={{ textAlign: 'center', flex: 1 }}>
+                      <div style={{ textAlign: 'left', flex: 1 }}>
                         <div style={{ fontSize: '0.75rem', color: '#555' }}>diff</div>
                         <div style={{ fontWeight: 'bold', color: diff >= 0 ? '#16a34a' : '#dc2626' }}>
                           {diff >= 0 ? '+' : ''}
@@ -303,12 +303,12 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                    <div style={{ textAlign: 'center', flex: 1 }}>
+                    <div style={{ textAlign: 'left', flex: 1 }}>
                       <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{item.exA}</div>
                       <div style={{ fontWeight: 'bold' }}>${formatNumber(item.priceA)}</div>
                     </div>
                     <div style={{ fontSize: '1.2rem', color: '#666' }}>&rarr;</div>
-                    <div style={{ textAlign: 'center', flex: 1 }}>
+                    <div style={{ textAlign: 'left', flex: 1 }}>
                       <div style={{ fontSize: '0.75rem', color: '#555', textTransform: 'capitalize' }}>{item.exB}</div>
                       <div style={{ fontWeight: 'bold' }}>${formatNumber(item.priceB)}</div>
                     </div>
