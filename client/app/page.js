@@ -52,6 +52,10 @@ export default function Home() {
   }, []);
 
   const entries = Object.values(prices);
+  const topMovers = entries
+    .filter((item) => Math.abs(Number(item.changePercent)) >= 1)
+    .sort((a, b) => Math.abs(Number(b.changePercent)) - Math.abs(Number(a.changePercent)))
+    .slice(0, 2);
   // Group by normalized symbol for comparison
   const symbolGroups = entries.reduce((acc, item) => {
     const normalized = String(item.symbol).replace('-', '').toUpperCase();
@@ -83,6 +87,20 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
     <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
       <h1 style={{ marginTop: 0 }}>Crypto Watch</h1>
       <p>Status: {status}</p>
+      {topMovers.length > 0 && (
+        <section style={{ marginBottom: '1.5rem' }}>
+          <h2 style={{ marginBottom: '0.5rem' }}>Top Movers (over 1%)</h2>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            {topMovers.map((item) => (
+              <li key={itemKey(item)} style={{ padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
+                <strong>{String(item.symbol).toUpperCase()}</strong> ({item.exchange})<br />
+                ${formatNumber(item.price)} — {Number(item.changePercent) >= 0 ? '+' : ''}
+                {formatNumber(item.changePercent)}%
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {entries.length === 0 ? (
         <p>Waiting for prices…</p>
       ) : (
