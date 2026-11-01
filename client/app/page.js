@@ -34,6 +34,8 @@ export default function Home() {
   const [watchHistory, setWatchHistory] = useState([]);
   const [watchRemaining, setWatchRemaining] = useState(0);
   const prevPricesRef = useRef(new Map());
+  const watchingRef = useRef(false);
+  const watchSymbolRef = useRef('');
   const watchIntervalRef = useRef(null);
 
   useEffect(() => {
