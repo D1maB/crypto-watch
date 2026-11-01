@@ -171,7 +171,7 @@ const symbolList = Object.keys(symbolGroups).sort((a, b) => {
       ) : (
         <>
           <section style={{ marginBottom: '3rem' }}>
-            <h2 style={{ marginBottom: '1rem' }}>Price Comparison</h2>
+            <h2 style={{ marginBottom: '1rem' }}>Price Comparison ({symbolList.length} tickers)</h2>
             <div style={{ overflow: 'auto', maxHeight: '70vh', border: '1px solid #eee', borderRadius: '8px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                 <thead>
