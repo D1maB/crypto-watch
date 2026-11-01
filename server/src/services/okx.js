@@ -1,6 +1,7 @@
 import { PriceStream } from './priceStream.js';
+import { BASE_SYMBOLS, toOkxInstId } from '../config/symbols.js';
 
-const DEFAULT_INST_IDS = ['BTC-USDT', 'ETH-USDT', 'SOL-USDT', 'XRP-USDT'];
+const DEFAULT_INST_IDS = BASE_SYMBOLS.map(toOkxInstId);
 
 export function createOkxStream(instIds = DEFAULT_INST_IDS) {
   return new PriceStream({

@@ -1,6 +1,7 @@
 import { PriceStream } from './priceStream.js';
+import { BASE_SYMBOLS, toBybitSymbol } from '../config/symbols.js';
 
-const DEFAULT_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOTUSDT', 'LINKUSDT', 'MATICUSDT', 'LTCUSDT'];
+const DEFAULT_SYMBOLS = BASE_SYMBOLS.map(toBybitSymbol);
 
 export function createBitgetStream(symbols = DEFAULT_SYMBOLS) {
   const normalized = symbols.map((s) => s.toUpperCase());

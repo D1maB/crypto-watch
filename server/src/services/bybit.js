@@ -1,6 +1,7 @@
 import { PriceStream } from './priceStream.js';
+import { BASE_SYMBOLS, toBybitSymbol } from '../config/symbols.js';
 
-const DEFAULT_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT'];
+const DEFAULT_SYMBOLS = BASE_SYMBOLS.map(toBybitSymbol);
 
 export function createBybitStream(symbols = DEFAULT_SYMBOLS) {
   const normalized = symbols.map((s) => s.toUpperCase());
@@ -9,7 +10,11 @@ export function createBybitStream(symbols = DEFAULT_SYMBOLS) {
     name: 'bybit',
     url: 'wss://stream.bybit.com/v5/public/spot',
     subscribe: (ws) => {
-      ws.send(JSON.stringify({ op: 'subscribe', args: normalized.map((s) => `tickers.${s}`) }));
+      const chunkSize = 10;
+      for (let i = 0; i < normalized.length; i += chunkSize) {
+        const chunk = normalized.slice(i, i + chunkSize);
+        ws.send(JSON.stringify({ op: 'subscribe', args: chunk.map((s) => `tickers.${s}`) }));
+      }
     },
     parse: (raw) => {
       const msg = JSON.parse(raw);

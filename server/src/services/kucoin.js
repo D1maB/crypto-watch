@@ -1,6 +1,7 @@
 import { PriceStream } from './priceStream.js';
+import { BASE_SYMBOLS, toOkxInstId } from '../config/symbols.js';
 
-const DEFAULT_SYMBOLS = ['BTC-USDT', 'ETH-USDT', 'SOL-USDT', 'XRP-USDT', 'ADA-USDT', 'DOT-USDT', 'LINK-USDT', 'MATIC-USDT', 'LTC-USDT'];
+const DEFAULT_SYMBOLS = BASE_SYMBOLS.map(toOkxInstId);
 
 async function getKucoinConnectionUrl() {
   const response = await fetch('https://api.kucoin.com/api/v1/bullet-public', {
