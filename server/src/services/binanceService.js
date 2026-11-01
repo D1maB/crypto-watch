@@ -57,6 +57,7 @@ export class BinancePriceStream {
 
         const symbol = data.s.toLowerCase();
         const update = {
+          exchange: 'binance',
           symbol,
           price: Number(data.c),
           changePercent: Number(data.P),

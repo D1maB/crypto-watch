@@ -12,6 +12,10 @@ function formatNumber(value, digits = 2) {
   });
 }
 
+function itemKey(item) {
+  return `${item.exchange}:${item.instId ?? item.symbol}`;
+}
+
 export default function Home() {
   const [prices, setPrices] = useState({});
   const [status, setStatus] = useState('connecting');
@@ -28,10 +32,10 @@ export default function Home() {
         const msg = JSON.parse(event.data);
         if (msg.type === 'snapshot') {
           const next = {};
-          for (const item of msg.data ?? []) next[item.symbol] = item;
+          for (const item of msg.data ?? []) next[itemKey(item)] = item;
           setPrices(next);
         } else if (msg.type === 'update') {
-          setPrices((prev) => ({ ...prev, [msg.data.symbol]: msg.data }));
+          setPrices((prev) => ({ ...prev, [itemKey(msg.data)]: msg.data }));
         }
       } catch (err) {
         console.error('ws parse error', err);
@@ -41,7 +45,9 @@ export default function Home() {
     return () => ws.close();
   }, []);
 
-  const entries = Object.values(prices);
+  const entries = Object.values(prices).sort((a, b) =>
+    `${a.exchange}${a.symbol}`.localeCompare(`${b.exchange}${b.symbol}`)
+  );
 
   return (
     <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
@@ -55,7 +61,7 @@ export default function Home() {
             const positive = item.changePercent >= 0;
             return (
               <li
-                key={item.symbol}
+                key={itemKey(item)}
                 style={{
                   padding: '1rem',
                   marginBottom: '0.5rem',
@@ -63,7 +69,9 @@ export default function Home() {
                   borderRadius: '8px',
                 }}
               >
-                <strong>{item.symbol.toUpperCase()}</strong>
+                <strong>
+                  {item.exchange.toUpperCase()} — {String(item.symbol).toUpperCase()}
+                </strong>
                 <div>Price: ${formatNumber(item.price)}</div>
                 <div style={{ color: positive ? 'green' : 'red' }}>
                   24h: {positive ? '+' : ''}
